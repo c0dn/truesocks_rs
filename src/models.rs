@@ -249,6 +249,7 @@ pub struct ListInfo {
 }
 
 impl ListInfo {
+    #[allow(dead_code)]
     fn formatted_remaining_time(&self) -> String {
         let hours = self.remaining_time / 3600;
         let minutes = (self.remaining_time % 3600) / 60;
