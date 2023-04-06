@@ -1,4 +1,8 @@
-use crate::models::{ApiError, ApiResponse, ListOnlineResult, ListZipSearchResult, Status};
+use crate::models::{
+    AccountStatusResult, ApiError, ApiResponse, DisableProxyRenewalResult,
+    EnableProxyRenewalResult, ListHistoryResult, ListOnlineResult, ListZipSearchResult,
+    ProxyCheckResult, ProxyInfo, PurchaseResult, Status, TestAndRefundResult,
+};
 use reqwest::header::{HeaderValue, ACCEPT_ENCODING};
 use reqwest_middleware::ClientBuilder;
 use reqwest_retry::policies::ExponentialBackoff;
@@ -59,7 +63,7 @@ async fn execute_command<T: DeserializeOwned>(
     }
     let value: Value = res.json().await.map_err(|_| 418_u16)?;
     if let Ok(status) = serde_json::from_value::<Status>(value["status"].clone()) {
-        if status.code != 0 {
+        if status.code != 0 && status.code != 209 {
             return Err(ApiError::from(status));
         }
     }
@@ -108,6 +112,207 @@ pub async fn list_zip_search(
     .map(|res| res.result)
 }
 
+pub async fn list_history(
+    api_key: String,
+    only_active: Option<u32>,
+    page: Option<u32>,
+) -> Result<ListHistoryResult, ApiError> {
+    let mut params: HashMap<String, String> = HashMap::new();
+
+    if let Some(only_active_value) = only_active {
+        params.insert("onlyactive".to_string(), only_active_value.to_string());
+    }
+
+    if let Some(page_value) = page {
+        params.insert("page".to_string(), page_value.to_string());
+    }
+
+    execute_command::<ListHistoryResult>(
+        "ListHistory",
+        api_key,
+        Some(serde_json::to_value(params).unwrap()),
+    )
+    .await
+    .map(|res| res.result)
+}
+
+pub async fn regular_proxy_rent(
+    api_key: String,
+    proxy_info: &ProxyInfo,
+) -> Result<PurchaseResult, ApiError> {
+    if !proxy_info.is_fresh {
+        let mut params: HashMap<&str, String> = HashMap::new();
+        params.insert("proxyid", proxy_info.proxy_id.to_string());
+
+        execute_command::<PurchaseResult>(
+            "RegularProxyBuy",
+            api_key,
+            Some(serde_json::to_value(params).unwrap()),
+        )
+        .await
+        .map(|res| res.result)
+    } else {
+        Err(ApiError::from(400_u16))
+    }
+}
+
+pub async fn regular_proxy_private_rent(
+    api_key: String,
+    proxy_info: &ProxyInfo,
+) -> Result<PurchaseResult, ApiError> {
+    if !proxy_info.is_fresh && proxy_info.private_rent_cost > 0 {
+        let mut params: HashMap<&str, String> = HashMap::new();
+        params.insert("proxyid", proxy_info.proxy_id.to_string());
+
+        execute_command::<PurchaseResult>(
+            "RegularProxyRent",
+            api_key,
+            Some(serde_json::to_value(params).unwrap()),
+        )
+        .await
+        .map(|res| res.result)
+    } else {
+        Err(ApiError::from(400_u16))
+    }
+}
+
+pub async fn fresh_proxy_rent(
+    api_key: String,
+    proxy_info: &ProxyInfo,
+) -> Result<PurchaseResult, ApiError> {
+    if proxy_info.is_fresh {
+        let mut params: HashMap<&str, String> = HashMap::new();
+        params.insert("proxyid", proxy_info.proxy_id.to_string());
+
+        execute_command::<PurchaseResult>(
+            "FreshProxyBuy",
+            api_key,
+            Some(serde_json::to_value(params).unwrap()),
+        )
+        .await
+        .map(|res| res.result)
+    } else {
+        Err(ApiError::from(400_u16))
+    }
+}
+
+pub async fn fresh_proxy_private_rent(
+    api_key: String,
+    proxy_info: &ProxyInfo,
+) -> Result<PurchaseResult, ApiError> {
+    if proxy_info.is_fresh && proxy_info.private_rent_cost > 0 {
+        let mut params: HashMap<&str, String> = HashMap::new();
+        params.insert("proxyid", proxy_info.proxy_id.to_string());
+
+        execute_command::<PurchaseResult>(
+            "FreshProxyRent",
+            api_key,
+            Some(serde_json::to_value(params).unwrap()),
+        )
+        .await
+        .map(|res| res.result)
+    } else {
+        Err(ApiError::from(400_u16))
+    }
+}
+
+pub async fn check_purchased_proxy(
+    api_key: String,
+    proxy_info: &ProxyInfo,
+) -> Result<ProxyCheckResult, ApiError> {
+    let mut params: HashMap<&str, String> = HashMap::new();
+    params.insert("proxyid", proxy_info.proxy_id.to_string());
+
+    execute_command::<ProxyCheckResult>(
+        "BoughtProxyCheck",
+        api_key,
+        Some(serde_json::to_value(params).unwrap()),
+    )
+    .await
+    .map(|res| res.result)
+}
+
+pub async fn refund_purchased_proxy(
+    api_key: String,
+    proxy_info: &ProxyInfo,
+) -> Result<TestAndRefundResult, ApiError> {
+    let mut params: HashMap<&str, String> = HashMap::new();
+    params.insert("proxyid", proxy_info.proxy_id.to_string());
+
+    execute_command::<TestAndRefundResult>(
+        "BoughtProxyRefund",
+        api_key,
+        Some(serde_json::to_value(params).unwrap()),
+    )
+    .await
+    .map(|res| res.result)
+}
+
+pub async fn bought_proxy_renew_enable(
+    api_key: String,
+    history_id: u32,
+) -> Result<EnableProxyRenewalResult, ApiError> {
+    let params: HashMap<&str, String> = [("historyid", history_id.to_string())]
+        .iter()
+        .cloned()
+        .collect();
+    execute_command::<EnableProxyRenewalResult>(
+        "BoughtProxyRenewEnable",
+        api_key,
+        Some(serde_json::to_value(params).unwrap()),
+    )
+    .await
+    .map(|res| res.result)
+}
+
+pub async fn bought_proxy_renew_disable(
+    api_key: String,
+    history_id: u32,
+) -> Result<DisableProxyRenewalResult, ApiError> {
+    let params: HashMap<&str, String> = [("historyid", history_id.to_string())]
+        .iter()
+        .cloned()
+        .collect();
+    execute_command::<DisableProxyRenewalResult>(
+        "BoughtProxyRenewDisable",
+        api_key,
+        Some(serde_json::to_value(params).unwrap()),
+    )
+    .await
+    .map(|res| res.result)
+}
+
+// Keep note as None if you want to set it to empty string/remove it
+// Returns Ok(()) if successful
+pub async fn history_entry_change_note(
+    api_key: String,
+    history_id: u32,
+    note: Option<&str>,
+) -> Result<(), ApiError> {
+    let mut params: HashMap<&str, String> = [("historyid", history_id.to_string())]
+        .iter()
+        .cloned()
+        .collect();
+
+    if let Some(note_value) = note {
+        params.insert("note", note_value.to_string());
+    }
+
+    execute_command::<Option<bool>>(
+        "HistoryEntryChangeNote",
+        api_key,
+        Some(serde_json::to_value(params).unwrap()),
+    )
+    .await?;
+    Ok(())
+}
+
+pub async fn get_account_status(api_key: String) -> Result<AccountStatusResult, ApiError> {
+    execute_command::<AccountStatusResult>("AccountStatus", api_key, None)
+        .await
+        .map(|res| res.result)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -133,6 +338,27 @@ mod tests {
     #[tokio::test]
     async fn test_list_zip_search() {
         let res = list_zip_search(API_KEY.to_string(), "US", "10001", None, None).await;
+        assert!(res.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_list_history() {
+        let res = list_history(API_KEY.to_string(), None, None).await;
+        assert!(res.is_ok());
+        println!("{:?}", res.unwrap());
+    }
+
+    #[tokio::test]
+    async fn test_get_account_status() {
+        let res = get_account_status(API_KEY.to_string()).await;
+        assert!(res.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_list_note_change() {
+        let res = history_entry_change_note(API_KEY.to_string(), 1254511, Some("share_lol")).await;
+        assert!(res.is_ok());
+        let res = history_entry_change_note(API_KEY.to_string(), 1254511, None).await;
         assert!(res.is_ok());
     }
 }

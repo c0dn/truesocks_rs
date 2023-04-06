@@ -1,5 +1,5 @@
-use serde::de::{self, Deserializer, Error, Unexpected};
-use serde::{Deserialize, Serialize, Serializer};
+use serde::de::{Deserializer, Error, Unexpected};
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 #[derive(Debug, Clone)]
@@ -274,7 +274,7 @@ pub struct ListOnlineResult {
     pub proxy_list: Vec<ProxyInfo>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ListZipSearchResult {
     #[serde(rename = "ServerTime")]
     pub server_time: u64,
@@ -290,4 +290,94 @@ pub struct ListZipSearchResult {
     pub proxy_count: u32,
     #[serde(rename = "ProxyList")]
     pub proxy_list: Vec<ProxyInfo>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ListHistoryResult {
+    #[serde(rename = "ServerTime")]
+    pub server_time: u64,
+    #[serde(rename = "HistoryCount")]
+    pub history_count: u32,
+    #[serde(rename = "HistoryEntriesPerPage")]
+    pub history_entries_per_page: u32,
+    #[serde(rename = "HistoryCurrentPage")]
+    pub history_current_page: u32,
+    #[serde(rename = "HistoryMaxPages")]
+    pub history_max_pages: u32,
+    #[serde(rename = "HistoryList")]
+    pub history_list: Vec<ListInfo>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PurchaseResult {
+    #[serde(rename = "ServerTime")]
+    pub server_time: Option<u64>,
+    #[serde(rename = "CreditsLeft")]
+    pub credits_left: Option<u32>,
+    #[serde(rename = "HistoryEntry")]
+    pub history_entry: Option<ListInfo>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ProxyCheckResult {
+    pub tests_passed: u32,
+    pub tests_total: u32,
+    #[serde(rename = "tests_result")]
+    pub test_result: String,
+    #[serde(rename = "tests_result_str")]
+    pub test_result_long: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TestAndRefundResult {
+    pub tests_passed: u32,
+    pub tests_total: u32,
+    #[serde(rename = "tests_result")]
+    pub test_result: String,
+    #[serde(rename = "tests_result_str")]
+    pub test_result_long: String,
+    pub refund_result: String,
+    #[serde(rename = "refund_result_str")]
+    pub refund_result_long: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct EnableProxyRenewalResult {
+    #[serde(rename = "HistoryID")]
+    pub history_id: u32,
+    #[serde(rename = "Enabled")]
+    pub enabled: bool,
+    #[serde(rename = "CreditsLeft")]
+    pub credits_left: u32,
+    #[serde(rename = "Cost")]
+    pub cost: u32,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct DisableProxyRenewalResult {
+    #[serde(rename = "HistoryID")]
+    pub history_id: u32,
+    #[serde(rename = "Enabled")]
+    pub enabled: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AccountStatusResult {
+    // account creation unix timestamp in milliseconds
+    #[serde(rename = "Created")]
+    pub created: u64,
+    #[serde(rename = "UserID")]
+    pub user_id: String,
+    #[serde(rename = "Email")]
+    pub email: String,
+    #[serde(rename = "Active")]
+    pub active: bool,
+    #[serde(rename = "Plan")]
+    pub plan: String,
+    // credits expiration unix timestamp in milliseconds
+    #[serde(rename = "Expires")]
+    pub expires: u64,
+    // Credits left in account
+    #[serde(rename = "Credits")]
+    pub credits: u32,
 }
