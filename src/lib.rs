@@ -111,8 +111,12 @@ pub async fn list_zip_search(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use lazy_static::lazy_static;
+    use std::env;
 
-    const API_KEY: &str = "0c41959bc7104a953feadd70bc0a1c2a";
+    lazy_static! {
+        static ref API_KEY: String = env::var("API_KEY").unwrap();
+    }
 
     #[tokio::test]
     async fn test_ping() {
