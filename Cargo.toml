@@ -1,7 +1,15 @@
 [package]
 name = "truesocks"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
+license-file = "LICENSE"
+keywords = ["truesocks", "truesocks SDK", "truesocks API"]
+categories = ["api-bindings"]
+publish = true
+description = " A Rust SDK for truesocks API"
+homepage = "https://github.com/c0dn/truesocks_rs"
+repository = "https://github.com/c0dn/truesocks_rs"
+readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
