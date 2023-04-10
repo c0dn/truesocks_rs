@@ -16,7 +16,7 @@ Add the `truesocks` crate to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-truesocks = "0.1.0"
+truesocks = "1.0.0"
 ```
 
 ## Contributing
