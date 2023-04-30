@@ -286,7 +286,7 @@ pub async fn bought_proxy_renew_disable(
 // Returns Ok(()) if successful
 pub async fn history_entry_change_note(
     api_key: String,
-    history_id: u32,
+    history_id: u64,
     note: Option<&str>,
 ) -> Result<(), ApiError> {
     let mut params: HashMap<&str, String> = [("historyid", history_id.to_string())]
